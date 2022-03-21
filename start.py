@@ -62,7 +62,10 @@ def createEc2():
                 MinCount=1,
                 SecurityGroupIds=[securityGroupId],
                 KeyName= 'vockey',
-                UserData=ec2StartUpBashScript
+                UserData=ec2StartUpBashScript,
+                IamInstanceProfile={
+                            'Name': 'EMR_EC2_DefaultRole'
+                     }
                 )
         instance = response["Instances"][0]["InstanceId"]
         ec2Client.create_tags(Resources=[instance], Tags=[{'Key':'Name', 'Value':("ec2" + tagId)}])
