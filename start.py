@@ -1,5 +1,6 @@
 import time
 import boto3
+from botocore.exceptions import ClientError
 
 
 
@@ -9,16 +10,44 @@ def createTagId():
         tagId = ("-" + timeStr + "-" + "s1025475")
         print("* created tag " + tagId)
         return tagId
+        
+        
+        
+def createSecurityGroup():
+        print("creating security group")
+        vpcResponse = ec2Client.describe_vpcs()
+        vpc_id = vpcResponse.get('Vpcs', [{}])[0].get('VpcId', '')
+        
+        try:
+            response = ec2Client.create_security_group(GroupName=("security-group" + tagId),
+                                                 Description=("security-group" + tagId),
+                                                 VpcId=vpc_id)
+            security_group_id = response['GroupId']
+
+            data = ec2Client.authorize_security_group_ingress(
+                GroupId=security_group_id,
+                IpPermissions=[
+                    {'IpProtocol': 'tcp',
+                     'FromPort': 22,
+                     'ToPort': 22,
+                     'IpRanges': [{'CidrIp': '0.0.0.0/0'}]}
+                ])
+            print("new security group create with security_group_id: " + security_group_id)
+            return security_group_id
+        except ClientError as e:
+            print(e)
+   
 
 
 
 def createEc2():
         print("creating Ec2 instance")
         response = ec2Client.run_instances(
-                ImageId= 'ami-08e4e35cccc6189f4',
+                ImageId= 'ami-0c02fb55956c7d316',
                 InstanceType= 't2.micro',
                 MaxCount=1,
                 MinCount=1,
+                SecurityGroupIds=[securityGroupId],
                 KeyName= 'vockey'
                 )
         instance = response["Instances"][0]["InstanceId"]
@@ -41,6 +70,16 @@ def createS3():
 # 
 # clean up fuctions
 # 
+
+def deleteSecurtyGroup(securityGroupId):
+        print("deleteSecurtyGroup: " + securityGroupId)
+        try:
+            response = ec2Client.delete_security_group(GroupId=securityGroupId)
+        except ClientError as e:
+            print(e)
+        print("deleteSecurtyGroup complete")
+        
+        
 
 def ec2Terminate(instanceId):
         print("terminating ec2 instance: " + instanceId)
@@ -74,12 +113,15 @@ s3Client = boto3.resource('s3')
 tagId = createTagId()
 
 
+securityGroupId = createSecurityGroup()
+
 # creating instances
 ec2instanceId = createEc2()
-s3Name = createS3()
+# s3Name = createS3()
 
 
 # clean up
-ec2Terminate(ec2instanceId)
-s3EemptyDelete(s3Name)
+# deleteSecurtyGroup(securityGroupId)
+# ec2Terminate(ec2instanceId)
+# s3EemptyDelete(s3Name)
 
