@@ -38,6 +38,18 @@ def createSecurityGroup():
             print(e)
    
 
+def creatEc2StartUpBashScript():
+        script = ("#!/bin/bash\n"
+                        "cd /home/ec2-user\n" 
+                        "sudo yum -y install git\n" 
+                        "git clone https://github.com/adamdon/cloud-ppe-detection.git\n" 
+                        "cd cloud-ppe-detection\n" 
+                        "touch s3name.txt\n"
+                        "echo '"
+                        + s3Name +
+                        "' >> myfile.txt\n")
+        return script
+
 
 
 def createEc2():
@@ -99,6 +111,8 @@ def s3EemptyDelete(s3Name):
 
 
 
+
+
 # 
 # Script start here
 # 
@@ -110,25 +124,26 @@ print("")
 ec2Client = boto3.client('ec2')
 s3Client = boto3.resource('s3')
 
-ec2StartUpBashScript = ("#!/bin/bash\n"
-                        "cd /home/ec2-user\n" 
-                        "sudo yum -y install git\n" 
-                        "git clone https://github.com/adamdon/cloud-ppe-detection.git\n" 
-                        "cd cloud-ppe-detection\n" 
-                        "touch test.txt")
+
 
 
 tagId = createTagId()
-
-
 securityGroupId = createSecurityGroup()
-
-# creating instances
+s3Name = createS3()
+ec2StartUpBashScript = creatEc2StartUpBashScript()
 ec2instanceId = createEc2()
-# s3Name = createS3()
 
 
+
+
+
+
+
+
+# 
 # clean up
+# 
+# 
 # deleteSecurtyGroup(securityGroupId)
 # ec2Terminate(ec2instanceId)
 # s3EemptyDelete(s3Name)
