@@ -42,12 +42,13 @@ def creatEc2StartUpBashScript():
         script = ("#!/bin/bash\n"
                         "cd /home/ec2-user\n" 
                         "sudo yum -y install git\n" 
+                        "pip3 install boto3\n" 
                         "git clone https://github.com/adamdon/cloud-ppe-detection.git\n" 
                         "cd cloud-ppe-detection\n" 
                         "touch s3name.txt\n"
                         "echo '"
                         + s3Name +
-                        "' >> myfile.txt\n")
+                        "' >> myfile.txt")
         return script
 
 
