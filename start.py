@@ -44,11 +44,11 @@ def creatEc2StartUpBashScript():
                         "sudo yum -y install git\n" 
                         "pip3 install boto3\n" 
                         "git clone https://github.com/adamdon/cloud-ppe-detection.git\n" 
-                        "cd cloud-ppe-detection\n" 
-                        "touch s3name.txt\n"
-                        "echo '"
-                        + s3Name +
-                        "' >> myfile.txt")
+                        "cd cloud-ppe-detection\n"
+                        "cd ec2-files\n"
+                        "python3 ec2Upload.py " + s3Name +
+                        "\n" 
+                        "touch scriptEnded.txt")
         return script
 
 
