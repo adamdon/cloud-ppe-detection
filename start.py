@@ -48,7 +48,8 @@ def createEc2():
                 MaxCount=1,
                 MinCount=1,
                 SecurityGroupIds=[securityGroupId],
-                KeyName= 'vockey'
+                KeyName= 'vockey',
+                UserData=ec2StartUpBashScript
                 )
         instance = response["Instances"][0]["InstanceId"]
         ec2Client.create_tags(Resources=[instance], Tags=[{'Key':'Name', 'Value':("ec2" + tagId)}])
@@ -108,6 +109,13 @@ print("")
 
 ec2Client = boto3.client('ec2')
 s3Client = boto3.resource('s3')
+
+ec2StartUpBashScript = ("#!/bin/bash\n"
+                        "cd /home/ec2-user\n" 
+                        "sudo yum -y install git\n" 
+                        "git clone https://github.com/adamdon/cloud-ppe-detection.git\n" 
+                        "cd cloud-ppe-detection\n" 
+                        "touch test.txt")
 
 
 tagId = createTagId()
