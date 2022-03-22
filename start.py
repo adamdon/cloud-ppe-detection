@@ -100,8 +100,15 @@ def deleteSecurtyGroup(securityGroupId):
 
 def ec2Terminate(instanceId):
         print("terminating ec2 instance: " + instanceId)
+        ec2 = boto3.resource('ec2')
+        instance = ec2.Instance(instanceId)
+        all_sg_ids = [sg['GroupId'] for sg in instance.security_groups]
+        # response = instance.modify_attribute(Groups=[''])
+        if securityGroupId in all_sg_ids:                                          
+            all_sg_ids.remove(securityGroupId)
+            print("Removed security Group: " + securityGroupId + " from instance: " + instanceId)
+            
         response = ec2Client.terminate_instances(InstanceIds=[instanceId, ],)
-        # print(response)
         print("terminat ec2 instance complete ")
         
 def s3EemptyDelete(s3Name):
@@ -138,17 +145,23 @@ ec2StartUpBashScript = creatEc2StartUpBashScript()
 ec2instanceId = createEc2()
 
 
-
-
-
-
-
-
-# 
-# clean up
-# 
-# 
-# deleteSecurtyGroup(securityGroupId)
-# ec2Terminate(ec2instanceId)
-# s3EemptyDelete(s3Name)
-
+print("...Setup complete")
+ans=True
+while ans:
+    print ("""
+    1.Exit and keep resources
+    2.Exit and delete resources
+    """)
+    ans=input("What would you like to do? ") 
+    if ans=="1": 
+        print("\n Exit and keep resources selected")
+        quit()
+    elif ans=="2":
+        print("\n Exit and delete resources selected")
+        ec2Terminate(ec2instanceId)
+        s3EemptyDelete(s3Name)
+        time.sleep(20)
+        deleteSecurtyGroup(securityGroupId)
+        quit()
+    elif ans !="":
+      print("\n Not a valid option") 
