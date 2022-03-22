@@ -84,6 +84,33 @@ def createS3():
 
 
 
+def createSNS():
+        print("creating SNS topic")
+        snsClient = boto3.client("sns")
+        snsName = ('sns' + tagId)
+        
+        try:
+            topic = snsClient.create_topic(Name=snsName)
+            print("SNS topic created with name: " + snsName)
+
+        except ClientError:
+            print("error, could not create topic")
+            raise
+        else:
+            return topic["TopicArn"]
+
+
+
+
+
+
+
+
+
+
+
+
+
 # 
 # clean up fuctions
 # 
@@ -118,6 +145,19 @@ def s3EemptyDelete(s3Name):
         bucket.delete()
         print("s3EemptyDelete complete")
 
+        
+def snsTopicDelete(topicArn):
+        print("snsTopicDelete: " + topicArn)
+        snsClient = boto3.client("sns")
+        try:
+            response = snsClient.delete_topic(TopicArn=topicArn)
+        except ClientError:
+            print('Could not delete a SNS topic.')
+            raise
+        else:
+            print("snsTopicDelete complete")
+
+
 
 
 
@@ -143,6 +183,7 @@ securityGroupId = createSecurityGroup()
 s3Name = createS3()
 ec2StartUpBashScript = creatEc2StartUpBashScript()
 ec2instanceId = createEc2()
+snsTopicArn = createSNS()
 
 
 print("...Setup complete")
@@ -160,7 +201,8 @@ while ans:
         print("\n Exit and delete resources selected")
         ec2Terminate(ec2instanceId)
         s3EemptyDelete(s3Name)
-        time.sleep(20)
+        snsTopicDelete(snsTopicArn)
+        time.sleep(30)
         deleteSecurtyGroup(securityGroupId)
         quit()
     elif ans !="":
