@@ -101,7 +101,7 @@ def createSNS():
             raise
         
         snsTopicPolicy = {
-            "Version": ("v" + tagId),
+            "Version": "2012-10-17",
             "Statement": [
                 {
                     "Effect": "Allow",
@@ -121,6 +121,19 @@ def createSNS():
             AttributeValue=json.dumps(snsTopicPolicy),
         )
         
+        sns = boto3.resource("sns")
+        topicsList = sns.topics.all()
+        newTopic = "null"
+        
+
+        print(newTopic)
+        for currentTopic in topicsList:
+            # currentTopic.subscribe(Protocol="email", Endpoint="mail@adamdon.co.uk", ReturnSubscriptionArn=False)
+
+            # if currentTopic["TopicArn"] == topic["TopicArn"]:
+            #     newTopic = currentTopic
+            print(currentTopic)
+        print(newTopic)
         
         return topic["TopicArn"]
             
@@ -129,7 +142,6 @@ def createS3Event():
         print("creating S3 event")
         s3 = boto3.resource('s3')
         bucket_notification = s3.BucketNotification(s3Name)
-        print(bucket_notification.topic_configurations)
         response = bucket_notification.put(
             NotificationConfiguration={
                 'TopicConfigurations': [
@@ -143,7 +155,7 @@ def createS3Event():
             },
             SkipDestinationValidation=False
         )
-        print(response)
+        #print(response)
 
 
 
