@@ -11,7 +11,7 @@ def updloadFile(filename):
     keyname = filename[:-4]
     print("Uploading file: " + filename)
     with open(filename, "rb") as f:
-        s3Client.upload_fileobj(f, s3bucketName, keyname)
+        s3Client.upload_fileobj(f, s3bucketName, filename)
     time.sleep(3)
 
 
