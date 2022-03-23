@@ -1,4 +1,5 @@
 import time
+import json
 import boto3
 from botocore.exceptions import ClientError
 
@@ -15,6 +16,7 @@ def createTagId():
         
 def createSecurityGroup():
         print("creating security group")
+        ec2Client = boto3.client('ec2')
         vpcResponse = ec2Client.describe_vpcs()
         vpc_id = vpcResponse.get('Vpcs', [{}])[0].get('VpcId', '')
         
@@ -55,6 +57,7 @@ def creatEc2StartUpBashScript():
 
 def createEc2():
         print("creating Ec2 instance")
+        ec2Client = boto3.client('ec2')
         response = ec2Client.run_instances(
                 ImageId= 'ami-0c02fb55956c7d316',
                 InstanceType= 't2.micro',
@@ -75,6 +78,7 @@ def createEc2():
         
 def createS3():
         print("creating s3 bucket")
+        s3Client = boto3.resource('s3')
         bucketName = ('s3' + tagId)
         s3Client.create_bucket(Bucket= bucketName)
 
@@ -91,13 +95,55 @@ def createSNS():
         
         try:
             topic = snsClient.create_topic(Name=snsName)
-            print("SNS topic created with name: " + snsName)
-
+            print("SNS topic created with arn: " + topic["TopicArn"])
         except ClientError:
             print("error, could not create topic")
             raise
-        else:
-            return topic["TopicArn"]
+        
+        snsTopicPolicy = {
+            "Version": ("v" + tagId),
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": "*",
+                    "Action": "sns:Publish",
+                    "Resource": topic["TopicArn"],
+                    "Condition": {
+                        "ArnLike": {"AWS:SourceArn": f"arn:aws:s3:*:*:{s3Name}"},
+                    },
+                },
+            ],
+        }
+        
+        snsClient.set_topic_attributes(
+            TopicArn=topic["TopicArn"],
+            AttributeName='Policy',
+            AttributeValue=json.dumps(snsTopicPolicy),
+        )
+        
+        
+        return topic["TopicArn"]
+            
+            
+def createS3Event():
+        print("creating S3 event")
+        s3 = boto3.resource('s3')
+        bucket_notification = s3.BucketNotification(s3Name)
+        print(bucket_notification.topic_configurations)
+        response = bucket_notification.put(
+            NotificationConfiguration={
+                'TopicConfigurations': [
+                    {
+                        'Id': ("topic-configuration" + tagId),
+                        'TopicArn': snsTopicArn,
+                        'Events': ["s3:ObjectCreated:Put"],
+                    },
+                ],
+                'EventBridgeConfiguration': {}
+            },
+            SkipDestinationValidation=False
+        )
+        print(response)
 
 
 
@@ -117,6 +163,7 @@ def createSNS():
 
 def deleteSecurtyGroup(securityGroupId):
         print("deleteSecurtyGroup: " + securityGroupId)
+        ec2Client = boto3.client('ec2')
         try:
             response = ec2Client.delete_security_group(GroupId=securityGroupId)
         except ClientError as e:
@@ -127,6 +174,7 @@ def deleteSecurtyGroup(securityGroupId):
 
 def ec2Terminate(instanceId):
         print("terminating ec2 instance: " + instanceId)
+        ec2Client = boto3.client('ec2')
         ec2 = boto3.resource('ec2')
         instance = ec2.Instance(instanceId)
         all_sg_ids = [sg['GroupId'] for sg in instance.security_groups]
@@ -140,6 +188,7 @@ def ec2Terminate(instanceId):
         
 def s3EemptyDelete(s3Name):
         print("s3EemptyDelete: " + s3Name)
+        s3Client = boto3.resource('s3')
         bucket = s3Client.Bucket(s3Name)
         bucket.objects.all().delete()
         bucket.delete()
@@ -172,18 +221,16 @@ print("")
 print("cloud-ppe-detection start up... (╯°□°)╯︵ ┻━┻")
 print("")
 
-ec2Client = boto3.client('ec2')
-s3Client = boto3.resource('s3')
-
-
 
 
 tagId = createTagId()
 securityGroupId = createSecurityGroup()
 s3Name = createS3()
+snsTopicArn = createSNS()
+createS3Event()
 ec2StartUpBashScript = creatEc2StartUpBashScript()
 ec2instanceId = createEc2()
-snsTopicArn = createSNS()
+
 
 
 print("...Setup complete")
