@@ -9,13 +9,14 @@ def createTagId():
         timecurrent = int(time.time())
         timeStr = str(timecurrent)
         tagId = ("-" + timeStr + "-" + "s1025475")
-        print("* created tag " + tagId)
+        print("Resources being created with tagId: " + tagId)
+        print("")
         return tagId
         
         
         
 def createSecurityGroup():
-        print("creating security group")
+        print("Security group creating...")
         ec2Client = boto3.client('ec2')
         vpcResponse = ec2Client.describe_vpcs()
         vpc_id = vpcResponse.get('Vpcs', [{}])[0].get('VpcId', '')
@@ -34,7 +35,7 @@ def createSecurityGroup():
                      'ToPort': 22,
                      'IpRanges': [{'CidrIp': '0.0.0.0/0'}]}
                 ])
-            print("new security group create with security_group_id: " + security_group_id)
+            print("Security group create with id: " + security_group_id)
             return security_group_id
         except ClientError as e:
             print(e)
@@ -55,47 +56,26 @@ def creatEc2StartUpBashScript():
 
 
 
-def createEc2():
-        print("creating Ec2 instance")
-        ec2Client = boto3.client('ec2')
-        response = ec2Client.run_instances(
-                ImageId= 'ami-0c02fb55956c7d316',
-                InstanceType= 't2.micro',
-                MaxCount=1,
-                MinCount=1,
-                SecurityGroupIds=[securityGroupId],
-                KeyName= 'vockey',
-                UserData=ec2StartUpBashScript,
-                IamInstanceProfile={
-                            'Name': 'EMR_EC2_DefaultRole'
-                     }
-                )
-        instance = response["Instances"][0]["InstanceId"]
-        ec2Client.create_tags(Resources=[instance], Tags=[{'Key':'Name', 'Value':("ec2" + tagId)}])
-        print("new EC2 instance created with ID: " + instance)
-        return instance
-        
         
 def createS3():
-        print("creating s3 bucket")
+        print("S3 bucket creating...")
         s3Client = boto3.resource('s3')
         bucketName = ('s3' + tagId)
         s3Client.create_bucket(Bucket= bucketName)
 
         # ec2Client.create_tags(Resources=[instance], Tags=[{'Key':'Name', 'Value':("ec2" + tagId)}])
-        print("new s3 bucket created")
+        print("S3 bucket created with name: " + bucketName)
         return bucketName
 
 
 
 def createSNS():
-        print("creating SNS topic")
+        print("SNS topic creating...")
         snsClient = boto3.client("sns")
         snsName = ('sns' + tagId)
         
         try:
             topic = snsClient.create_topic(Name=snsName)
-            print("SNS topic created with arn: " + topic["TopicArn"])
         except ClientError:
             print("error, could not create topic")
             raise
@@ -125,21 +105,21 @@ def createSNS():
         topicsList = sns.topics.all()
         newTopic = "null"
         
-
-        print(newTopic)
-        for currentTopic in topicsList:
-            # currentTopic.subscribe(Protocol="email", Endpoint="mail@adamdon.co.uk", ReturnSubscriptionArn=False)
-
-            # if currentTopic["TopicArn"] == topic["TopicArn"]:
-            #     newTopic = currentTopic
-            print(currentTopic)
-        print(newTopic)
         
+        newTopic = sns.Topic(topic["TopicArn"])
+        newTopic.subscribe(Protocol="email", Endpoint="mail@adamdon.co.uk", ReturnSubscriptionArn=False)
+        
+        # for currentTopic in topicsList:
+        #     currentTopic.subscribe(Protocol="email", Endpoint="mail@adamdon.co.uk", ReturnSubscriptionArn=False)
+        #     print(currentTopic)
+        #     print(type(currentTopic))
+            
+        print("SNS topic created with arn: " + topic["TopicArn"])
         return topic["TopicArn"]
             
             
 def createS3Event():
-        print("creating S3 event")
+        print("S3 event creating...")
         s3 = boto3.resource('s3')
         bucket_notification = s3.BucketNotification(s3Name)
         response = bucket_notification.put(
@@ -155,7 +135,41 @@ def createS3Event():
             },
             SkipDestinationValidation=False
         )
-        #print(response)
+        print("S3 event created with RequestId: " + response["ResponseMetadata"]["RequestId"])
+        return(response["ResponseMetadata"]["RequestId"])
+
+
+
+
+
+def createEc2():
+        print("EC2 instance creating...")
+        ec2Client = boto3.client('ec2')
+        response = ec2Client.run_instances(
+                ImageId= 'ami-0c02fb55956c7d316',
+                InstanceType= 't2.micro',
+                MaxCount=1,
+                MinCount=1,
+                SecurityGroupIds=[securityGroupId],
+                KeyName= 'vockey',
+                UserData=ec2StartUpBashScript,
+                IamInstanceProfile={
+                            'Name': 'EMR_EC2_DefaultRole'
+                     }
+                )
+        instance = response["Instances"][0]["InstanceId"]
+        ec2Client.create_tags(Resources=[instance], Tags=[{'Key':'Name', 'Value':("ec2" + tagId)}])
+        print("EC2 instance created with ID: " + instance)
+        return instance
+
+
+
+
+
+
+
+
+
 
 
 
@@ -225,6 +239,10 @@ def snsTopicDelete(topicArn):
 
 
 
+
+
+
+
 # 
 # Script start here
 # 
@@ -239,12 +257,12 @@ tagId = createTagId()
 securityGroupId = createSecurityGroup()
 s3Name = createS3()
 snsTopicArn = createSNS()
-createS3Event()
+s3EventRequestId = createS3Event()
 ec2StartUpBashScript = creatEc2StartUpBashScript()
 ec2instanceId = createEc2()
 
 
-
+print("")
 print("...Setup complete")
 ans=True
 while ans:
@@ -254,15 +272,15 @@ while ans:
     """)
     ans=input("What would you like to do? ") 
     if ans=="1": 
-        print("\n Exit and keep resources selected")
+        print("\nExit and keep resources selected")
         quit()
     elif ans=="2":
-        print("\n Exit and delete resources selected")
+        print("\nExit and delete resources selected")
         ec2Terminate(ec2instanceId)
         s3EemptyDelete(s3Name)
         snsTopicDelete(snsTopicArn)
-        time.sleep(30)
+        time.sleep(5)
         deleteSecurtyGroup(securityGroupId)
         quit()
     elif ans !="":
-      print("\n Not a valid option") 
+      print("\nNot a valid option") 
