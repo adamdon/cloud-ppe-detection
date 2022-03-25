@@ -15,14 +15,23 @@ def main():
     print("cloud-ppe-detection start up... (╯°□°)╯︵ ┻━┻")
     print("")
     
+    tagId = None
+    securityGroupId = None
+    s3Name = None
+    snsTopicArn = None
+    s3EventRequestId = None
+    ec2StartUpBashScript = None
+    StackId = None
+    ec2instanceId = None
+    
     try:
         tagId = createTagId()
         securityGroupId = createSecurityGroup(tagId)
         s3Name = createS3(tagId)
         snsTopicArn = createSNS(tagId, s3Name)
+        StackId = deployCloudformationStack(tagId, snsTopicArn)
         s3EventRequestId = createS3Event(tagId, s3Name, snsTopicArn)
         ec2StartUpBashScript = creatEc2StartUpBashScript(tagId, s3Name)
-        StackId = deployCloudformationStack(tagId, snsTopicArn)
         ec2instanceId = createEc2(tagId, securityGroupId, ec2StartUpBashScript)
     except:
         print("An exception occurred")
@@ -72,19 +81,24 @@ def deployCloudformationStack(tagId, snsTopicArn):
     #     templateYaml = yaml.safe_load(content_file)
     # templateJson = json.dumps(templateYaml)
 
+    # pathToFile = Path(__file__).parent / "cloudformation_template.json"
+    # with open(pathToFile, 'r') as content_file:
+    #     templateJson = json.load(content_file)
+    # fixedTemplateJsonString = str(templateJson).replace("'", '"')
+    
     pathToFile = Path(__file__).parent / "cloudformation_template.json"
     with open(pathToFile, 'r') as content_file:
-        templateJson = json.load(content_file)
- 
-    
+        templateText = content_file.read()
+
     response = client.create_stack(
         StackName=stackName,
-        TemplateBody=str(templateJson),
+        TemplateBody=templateText,
         Parameters=[{ # set as necessary. Ex: 
             'ParameterKey': 'SNSTopicARN',
             'ParameterValue': snsTopicArn
         }]
     )
+    time.sleep(60) #Sleep due to AWS propagation issues
     print("Cloudfomation Stack deployed with StackId: " + response["StackId"])
     return response["StackId"]
     # response = client.create_stack(

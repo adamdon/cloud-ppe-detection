@@ -23,7 +23,7 @@
                         {
                             "Sid": "Allow-SNS-SendMessage",
                             "Effect": "Allow",
-                            "Principal": "*",
+                            "Principal": {"Service": "sns.amazonaws.com"},
                             "Action": [
                                 "sqs:SendMessage"
                             ],
