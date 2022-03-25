@@ -22,11 +22,12 @@ def main():
         snsTopicArn = createSNS(tagId, s3Name)
         s3EventRequestId = createS3Event(tagId, s3Name, snsTopicArn)
         ec2StartUpBashScript = creatEc2StartUpBashScript(tagId, s3Name)
-        StackId = deployCloudformationStack(tagId, snsTopicArn)
         ec2instanceId = createEc2(tagId, securityGroupId, ec2StartUpBashScript)
+        deployCloudformationStack(tagId, snsTopicArn)
+
     except:
         print("An exception occurred")
-        deleteResources(ec2instanceId, securityGroupId, s3Name, snsTopicArn, StackId);
+        deleteResources(ec2instanceId, securityGroupId, s3Name, snsTopicArn);
         quit()
     else:
         print("")
@@ -43,7 +44,7 @@ def main():
                 quit()
             elif ans=="2":
                 print("\nExit and delete resources selected")
-                deleteResources(ec2instanceId, securityGroupId, s3Name, snsTopicArn, StackId)
+                deleteResources(ec2instanceId, securityGroupId, s3Name, snsTopicArn)
                 quit()
             elif ans !="":
               print("\nNot a valid option") 
@@ -66,27 +67,21 @@ def deployCloudformationStack(tagId, snsTopicArn):
     client = boto3.client('cloudformation')
     
     stackName = ("stack" + tagId)
-    
-    # pathToFile = Path(__file__).parent / "cloudformation_template.yaml"
-    # with open(pathToFile, 'r') as content_file:
-    #     templateYaml = yaml.safe_load(content_file)
-    # templateJson = json.dumps(templateYaml)
-
-    pathToFile = Path(__file__).parent / "cloudformation_template.json"
+    pathToFile = Path(__file__).parent / "cloudformation_template.yaml"
     with open(pathToFile, 'r') as content_file:
-        templateJson = json.load(content_file)
- 
+        templateYaml = yaml.safe_load(content_file)
+    templateJson = json.dumps(templateYaml)
     
     response = client.create_stack(
         StackName=stackName,
-        TemplateBody=str(templateJson),
+        TemplateBody=templateJson,
         Parameters=[{ # set as necessary. Ex: 
-            'ParameterKey': 'SNSTopicARN',
+            'ParameterKey': 'awsSNSTopicArn',
             'ParameterValue': snsTopicArn
         }]
     )
-    print("Cloudfomation Stack deployed with StackId: " + response["StackId"])
-    return response["StackId"]
+    print(response)
+    print("Cloudfomation Stack deployed: ")
     # response = client.create_stack(
     #     StackName='string',
     #     TemplateBody='string',
@@ -318,15 +313,13 @@ def createEc2(tagId, securityGroupId, ec2StartUpBashScript):
 # clean up fuctions
 # 
 
-def deleteResources(ec2instanceId, securityGroupId, s3Name, snsTopicArn, StackId):
+def deleteResources(ec2instanceId, securityGroupId, s3Name, snsTopicArn):
     if ec2instanceId:
         ec2Terminate(ec2instanceId, securityGroupId)
     if s3Name:    
         s3EemptyDelete(s3Name)
     if snsTopicArn:
         snsTopicDelete(snsTopicArn)
-    if StackId:
-        cloudformationStackDelete(StackId)
     if securityGroupId:
         time.sleep(5)
         deleteSecurtyGroup(securityGroupId)
@@ -378,18 +371,6 @@ def snsTopicDelete(topicArn):
         raise
     else:
         print("snsTopicDelete complete")
-        
-        
-def cloudformationStackDelete(StackId):
-    print("cloudformationStackDelete: " + StackId)
-    client = boto3.client('cloudformation')
-    response = client.delete_stack(
-        StackName=StackId
-    )
-
-
-    print("cloudformationStackDelete complete")
-        
 
 
 
