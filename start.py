@@ -302,6 +302,7 @@ def createEc2(tagId, securityGroupId, ec2StartUpBashScript):
                  }
             )
     instance = response["Instances"][0]["InstanceId"]
+    time.sleep(3)
     ec2Client.create_tags(Resources=[instance], Tags=[{'Key':'Name', 'Value':("ec2" + tagId)}])
     print("EC2 instance created with ID: " + instance)
     return instance

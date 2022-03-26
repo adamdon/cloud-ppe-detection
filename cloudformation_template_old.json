@@ -27,7 +27,7 @@
             "Type": "AWS::Logs::LogGroup",
             "Properties": {
                 "LogGroupName": {
-                    "Fn::Sub": "/aws/lambda/lambda${tagId}"
+                    "Fn::Sub": "/aws/lambda/lambda-log-group-1${tagId}"
                 },
                 "RetentionInDays": 3
             }
@@ -123,14 +123,10 @@
                                     "Effect": "Allow",
                                     "Action": [
                                         "logs:CreateLogStream",
-                                        "logs:PutLogEvents",
-                                        "logs:CreateLogGroup"
+                                        "logs:PutLogEvents"
                                     ],
                                     "Resource": {
-                                        "Fn::GetAtt": [
-                                            "LambdaLogGroup1",
-                                            "Arn"
-                                        ]
+                                        "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/lambda-log-group-1${tagId}:*:*"
                                     }
                                 },
                                 {
@@ -192,7 +188,7 @@
                 "LambdaLogGroup1"
             ],
             "Properties": {
-                "Description": "SQS triggered lambda.",
+                "Description": "SQS triggered lambda 1",
                 "FunctionName": {
                     "Fn::Sub": "lambda${tagId}"
                 },
