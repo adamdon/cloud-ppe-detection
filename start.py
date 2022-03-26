@@ -1,7 +1,10 @@
+import os
+import traceback
 import time
 import yaml
 import json
 import boto3
+from zipfile import ZipFile
 from pathlib import Path
 from botocore.exceptions import ClientError
 
@@ -29,12 +32,14 @@ def main():
         securityGroupId = createSecurityGroup(tagId)
         s3Name = createS3(tagId)
         snsTopicArn = createSNS(tagId, s3Name)
-        StackId = deployCloudformationStack(tagId, snsTopicArn)
         s3EventRequestId = createS3Event(tagId, s3Name, snsTopicArn)
+        uploadLambdas(s3Name)
+        StackId = deployCloudformationStack(tagId, snsTopicArn)
         ec2StartUpBashScript = creatEc2StartUpBashScript(tagId, s3Name)
         ec2instanceId = createEc2(tagId, securityGroupId, ec2StartUpBashScript)
     except:
-        print("An exception occurred")
+        print("*** An exception occurred ***")
+        print(traceback.format_exc())
         deleteResources(ec2instanceId, securityGroupId, s3Name, snsTopicArn, StackId);
         quit()
     else:
@@ -70,6 +75,28 @@ def main():
 # 
 # resource creation fuctions
 # 
+
+
+def uploadLambdas(s3bucketName):
+    print("Lambdas uploading to S3...")
+    os.chdir(Path(__file__).parent)
+    pathTolambda_label_detectionPy = Path(__file__).parent / "lambda_label_detection.py"
+    pathTolambda_label_detectionZip = Path(__file__).parent / "lambda_label_detection.zip"
+
+    
+    ZipFile(pathTolambda_label_detectionZip, mode='w').write(pathTolambda_label_detectionPy, "lambda_label_detection.py")
+
+    
+    s3Client = boto3.client('s3')
+    with open(pathTolambda_label_detectionZip, "rb") as f:
+        s3Client.upload_fileobj(f, s3bucketName, "lambda_label_detection.zip")
+    time.sleep(5)    
+    
+    os.remove(pathTolambda_label_detectionZip)
+    print("Lambdas uploaded to S3 with: ")
+
+
+
 def deployCloudformationStack(tagId, snsTopicArn):
     print("Cloudfomation Stack deploying...")
     client = boto3.client('cloudformation')
@@ -101,51 +128,6 @@ def deployCloudformationStack(tagId, snsTopicArn):
     time.sleep(60) #Sleep due to AWS propagation issues
     print("Cloudfomation Stack deployed with StackId: " + response["StackId"])
     return response["StackId"]
-    # response = client.create_stack(
-    #     StackName='string',
-    #     TemplateBody='string',
-    #     TemplateURL='string',
-    #     Parameters=[
-    #         {
-    #             'ParameterKey': 'string',
-    #             'ParameterValue': 'string',
-    #             'UsePreviousValue': True|False,
-    #             'ResolvedValue': 'string'
-    #         },
-    #     ],
-    #     DisableRollback=True|False,
-    #     RollbackConfiguration={
-    #         'RollbackTriggers': [
-    #             {
-    #                 'Arn': 'string',
-    #                 'Type': 'string'
-    #             },
-    #         ],
-    #         'MonitoringTimeInMinutes': 123
-    #     },
-    #     TimeoutInMinutes=123,
-    #     NotificationARNs=[
-    #         'string',
-    #     ],
-    #     Capabilities=[
-    #         'CAPABILITY_IAM'|'CAPABILITY_NAMED_IAM'|'CAPABILITY_AUTO_EXPAND',
-    #     ],
-    #     ResourceTypes=[
-    #         'string',
-    #     ],
-    #     RoleARN='string',
-    #     OnFailure='DO_NOTHING'|'ROLLBACK'|'DELETE',
-    #     StackPolicyBody='string',
-    #     StackPolicyURL='string',
-    #     Tags=[
-    #         {
-    #             'Key': 'string',
-    #             'Value': 'string'
-    #         },
-    #     ],
-    #     ClientRequestToken='string',
-    #     EnableTerminationProtection=True|False
-    # )
 
 
 
@@ -274,6 +256,16 @@ def createS3Event(tagId, s3Name, snsTopicArn):
                     'Id': ("topic-configuration" + tagId),
                     'TopicArn': snsTopicArn,
                     'Events': ["s3:ObjectCreated:Put"],
+                    'Filter': {
+                        'Key': {
+                            'FilterRules': [
+                                {
+                                    'Name': 'prefix',
+                                    'Value': 'image'
+                                },
+                            ]
+                        }
+                    }
                 },
             ],
             'EventBridgeConfiguration': {}
