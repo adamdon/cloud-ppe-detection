@@ -121,9 +121,16 @@ def deployCloudformationStack(tagId, snsTopicArn):
         StackName=stackName,
         TemplateBody=templateText,
         Parameters=[{ # set as necessary. Ex: 
-            'ParameterKey': 'SNSTopicARN',
+            'ParameterKey': 'snsTopicArn',
             'ParameterValue': snsTopicArn
-        }]
+        },
+        {
+            'ParameterKey': 'tagId',
+            'ParameterValue': tagId
+        }
+        ],
+        Capabilities=['CAPABILITY_IAM'],
+        RoleARN='arn:aws:iam::799129573284:role/LabRole',
     )
     time.sleep(60) #Sleep due to AWS propagation issues
     print("Cloudfomation Stack deployed with StackId: " + response["StackId"])
