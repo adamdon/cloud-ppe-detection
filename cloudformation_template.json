@@ -92,6 +92,7 @@
         "LambdaRole1": {
             "Type": "AWS::IAM::Role",
             "DependsOn": [
+                "DynamoDbImageTable",
                 "Queue1"
             ],
             "Properties": {
@@ -119,6 +120,24 @@
                         "PolicyDocument": {
                             "Version": "2012-10-17",
                             "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "dynamodb:BatchGetItem",
+                                        "dynamodb:GetItem",
+                                        "dynamodb:Query",
+                                        "dynamodb:Scan",
+                                        "dynamodb:BatchWriteItem",
+                                        "dynamodb:PutItem",
+                                        "dynamodb:UpdateItem"
+                                    ],
+                                    "Resource": {
+                                        "Fn::GetAtt": [
+                                            "DynamoDbImageTable",
+                                            "Arn"
+                                        ]
+                                    }
+                                },
                                 {
                                     "Effect": "Allow",
                                     "Action": [
@@ -214,6 +233,38 @@
                         "Fn::Sub": "s3${tagId}"
                     },
                     "S3Key": "lambda_label_detection.zip"
+                }
+            }
+        },
+        "DynamoDbImageTable": {
+            "Type": "AWS::DynamoDB::Table",
+            "Properties": {
+                "TableName": {
+                    "Fn::Sub": "table${tagId}"
+                },
+                "AttributeDefinitions": [
+                    {
+                        "AttributeName": "image",
+                        "AttributeType": "S"
+                    },
+                    {
+                        "AttributeName": "results",
+                        "AttributeType": "S"
+                    }
+                ],
+                "KeySchema": [
+                    {
+                        "AttributeName": "image",
+                        "KeyType": "HASH"
+                    },
+                    {
+                        "AttributeName": "results",
+                        "KeyType": "RANGE"
+                    }
+                ],
+                "ProvisionedThroughput": {
+                    "ReadCapacityUnits": 5,
+                    "WriteCapacityUnits": 5
                 }
             }
         }

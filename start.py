@@ -1,7 +1,6 @@
 import os
 import traceback
 import time
-import yaml
 import json
 import boto3
 from zipfile import ZipFile
@@ -103,15 +102,6 @@ def deployCloudformationStack(tagId, snsTopicArn):
     
     stackName = ("stack" + tagId)
     
-    # pathToFile = Path(__file__).parent / "cloudformation_template.yaml"
-    # with open(pathToFile, 'r') as content_file:
-    #     templateYaml = yaml.safe_load(content_file)
-    # templateJson = json.dumps(templateYaml)
-
-    # pathToFile = Path(__file__).parent / "cloudformation_template.json"
-    # with open(pathToFile, 'r') as content_file:
-    #     templateJson = json.load(content_file)
-    # fixedTemplateJsonString = str(templateJson).replace("'", '"')
     
     pathToFile = Path(__file__).parent / "cloudformation_template.json"
     with open(pathToFile, 'r') as content_file:
