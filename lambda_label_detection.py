@@ -26,8 +26,7 @@ def lambda_handler(event, context):
         label["Confidence"] = str(label["Confidence"])
         print("label found: " + str(label))
         
-    # print(labels)    
-    
+
     table = boto3.resource("dynamodb").Table(tableName)
     table.put_item(Item={"image": imageName, "results": str(labels)})
     

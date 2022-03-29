@@ -89,20 +89,29 @@ def main():
 def uploadLambdas(s3bucketName):
     print("Lambdas uploading to S3...")
     os.chdir(Path(__file__).parent)
+    
     pathTolambda_label_detectionPy = Path(__file__).parent / "lambda_label_detection.py"
     pathTolambda_label_detectionZip = Path(__file__).parent / "lambda_label_detection.zip"
+    
+    pathTolambda_ppe_detectionPy = Path(__file__).parent / "lambda_ppe_detection.py"
+    pathTolambda_ppe_detectionZip = Path(__file__).parent / "lambda_ppe_detection.zip"
 
     
     ZipFile(pathTolambda_label_detectionZip, mode='w').write(pathTolambda_label_detectionPy, "lambda_label_detection.py")
+    ZipFile(pathTolambda_ppe_detectionZip, mode='w').write(pathTolambda_ppe_detectionPy, "lambda_ppe_detection.py")
 
     
     s3Client = boto3.client('s3')
     with open(pathTolambda_label_detectionZip, "rb") as f:
         s3Client.upload_fileobj(f, s3bucketName, "lambda_label_detection.zip")
-    time.sleep(5)    
-    
+    time.sleep(1)
+    with open(pathTolambda_ppe_detectionZip, "rb") as f:
+        s3Client.upload_fileobj(f, s3bucketName, "lambda_ppe_detection.zip")
+    time.sleep(1)
+
     os.remove(pathTolambda_label_detectionZip)
-    print("Lambdas uploaded to S3 with: ")
+    os.remove(pathTolambda_ppe_detectionZip)
+    print("Lambdas uploaded to S3 with filenames: lambda_label_detection.zip && lambda_ppe_detection.zip")
 
 
 
@@ -267,9 +276,9 @@ def createSNS(tagId, s3Name):
         AttributeValue=json.dumps(snsTopicPolicy),
     )
     
-    sns = boto3.resource("sns")
-    topicsList = sns.topics.all()
-    newTopic = "null"
+    # sns = boto3.resource("sns")
+    # topicsList = sns.topics.all()
+    # newTopic = "null"
     
     
     # newTopic = sns.Topic(topic["TopicArn"])

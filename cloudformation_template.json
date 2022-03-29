@@ -23,16 +23,15 @@
                 }
             }
         },
-        "LambdaLogGroup1": {
-            "Type": "AWS::Logs::LogGroup",
+        "Queue2": {
+            "Type": "AWS::SQS::Queue",
             "Properties": {
-                "LogGroupName": {
-                    "Fn::Sub": "/aws/lambda/lambda${tagId}"
-                },
-                "RetentionInDays": 3
+                "QueueName": {
+                    "Fn::Sub": "sqs-2${tagId}"
+                }
             }
         },
-        "SqsQueuePolicy": {
+        "SqsQueuePolicy1": {
             "Type": "AWS::SQS::QueuePolicy",
             "Properties": {
                 "PolicyDocument": {
@@ -71,13 +70,70 @@
                 ]
             }
         },
-        "SnsSubscription": {
+        "SqsQueuePolicy2": {
+            "Type": "AWS::SQS::QueuePolicy",
+            "Properties": {
+                "PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Id": "MyQueuePolicy",
+                    "Statement": [
+                        {
+                            "Sid": "Allow-SNS-SendMessage",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "sns.amazonaws.com"
+                            },
+                            "Action": [
+                                "sqs:SendMessage"
+                            ],
+                            "Resource": {
+                                "Fn::GetAtt": [
+                                    "Queue2",
+                                    "Arn"
+                                ]
+                            },
+                            "Condition": {
+                                "ArnEquals": {
+                                    "aws:SourceArn": {
+                                        "Ref": "snsTopicArn"
+                                    }
+                                }
+                            }
+                        }
+                    ]
+                },
+                "Queues": [
+                    {
+                        "Ref": "Queue2"
+                    }
+                ]
+            }
+        },
+        "SnsSubscription1": {
             "Type": "AWS::SNS::Subscription",
             "Properties": {
                 "Protocol": "sqs",
                 "Endpoint": {
                     "Fn::GetAtt": [
                         "Queue1",
+                        "Arn"
+                    ]
+                },
+                "Region": {
+                    "Ref": "TopicRegion"
+                },
+                "TopicArn": {
+                    "Ref": "snsTopicArn"
+                }
+            }
+        },
+        "SnsSubscription2": {
+            "Type": "AWS::SNS::Subscription",
+            "Properties": {
+                "Protocol": "sqs",
+                "Endpoint": {
+                    "Fn::GetAtt": [
+                        "Queue2",
                         "Arn"
                     ]
                 },
@@ -115,7 +171,7 @@
                 "Policies": [
                     {
                         "PolicyName": {
-                            "Fn::Sub": "lambd-role-policy${tagId}"
+                            "Fn::Sub": "lambda-1-role-policy${tagId}"
                         },
                         "PolicyDocument": {
                             "Version": "2012-10-17",
@@ -200,7 +256,118 @@
                 ]
             }
         },
-        "LambdaSourceMapping": {
+        "LambdaRole2": {
+            "Type": "AWS::IAM::Role",
+            "DependsOn": [
+                "DynamoDbImageTable",
+                "Queue2"
+            ],
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "lambda.amazonaws.com"
+                                ]
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "Policies": [
+                    {
+                        "PolicyName": {
+                            "Fn::Sub": "lambda-2-role-policy${tagId}"
+                        },
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "dynamodb:BatchGetItem",
+                                        "dynamodb:GetItem",
+                                        "dynamodb:Query",
+                                        "dynamodb:Scan",
+                                        "dynamodb:BatchWriteItem",
+                                        "dynamodb:PutItem",
+                                        "dynamodb:UpdateItem"
+                                    ],
+                                    "Resource": {
+                                        "Fn::GetAtt": [
+                                            "DynamoDbImageTable",
+                                            "Arn"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "logs:CreateLogStream",
+                                        "logs:PutLogEvents",
+                                        "logs:CreateLogGroup"
+                                    ],
+                                    "Resource": {
+                                        "Fn::GetAtt": [
+                                            "LambdaLogGroup2",
+                                            "Arn"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "sqs:ReceiveMessage",
+                                        "sqs:DeleteMessage",
+                                        "sqs:GetQueueAttributes",
+                                        "sqs:ChangeMessageVisibility"
+                                    ],
+                                    "Resource": {
+                                        "Fn::GetAtt": [
+                                            "Queue2",
+                                            "Arn"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "xray:PutTraceSegments",
+                                        "xray:PutTelemetryRecords"
+                                    ],
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "s3:GetObject",
+                                        "s3:GetObjectAcl"
+                                    ],
+                                    "Resource": {
+                                        "Fn::Sub": "arn:aws:s3:::s3${tagId}/*"
+                                    }
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "rekognition:DetectProtectiveEquipment",
+                                        "rekognition:DetectLabels",
+                                        "rekognition:GetLabelDetection"
+                                    ],
+                                    "Resource": "*"
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        "LambdaSourceMapping1": {
             "Type": "AWS::Lambda::EventSourceMapping",
             "DependsOn": [
                 "Queue1",
@@ -223,6 +390,47 @@
                 }
             }
         },
+        "LambdaSourceMapping2": {
+            "Type": "AWS::Lambda::EventSourceMapping",
+            "DependsOn": [
+                "Queue2",
+                "Lambda2"
+            ],
+            "Properties": {
+                "BatchSize": 5,
+                "Enabled": true,
+                "EventSourceArn": {
+                    "Fn::GetAtt": [
+                        "Queue2",
+                        "Arn"
+                    ]
+                },
+                "FunctionName": {
+                    "Fn::GetAtt": [
+                        "Lambda2",
+                        "Arn"
+                    ]
+                }
+            }
+        },
+        "LambdaLogGroup1": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+                "LogGroupName": {
+                    "Fn::Sub": "/aws/lambda/lambda-1${tagId}"
+                },
+                "RetentionInDays": 365
+            }
+        },
+        "LambdaLogGroup2": {
+            "Type": "AWS::Logs::LogGroup",
+            "Properties": {
+                "LogGroupName": {
+                    "Fn::Sub": "/aws/lambda/lambda-2${tagId}"
+                },
+                "RetentionInDays": 365
+            }
+        },
         "Lambda1": {
             "Type": "AWS::Lambda::Function",
             "DependsOn": [
@@ -230,9 +438,9 @@
                 "LambdaLogGroup1"
             ],
             "Properties": {
-                "Description": "SQS triggered lambda.",
+                "Description": "SQS triggered lambda1 for lambda_label_detection.",
                 "FunctionName": {
-                    "Fn::Sub": "lambda${tagId}"
+                    "Fn::Sub": "lambda-1${tagId}"
                 },
                 "Handler": "lambda_label_detection.lambda_handler",
                 "Runtime": "python3.7",
@@ -252,6 +460,38 @@
                         "Fn::Sub": "s3${tagId}"
                     },
                     "S3Key": "lambda_label_detection.zip"
+                }
+            }
+        },
+        "Lambda2": {
+            "Type": "AWS::Lambda::Function",
+            "DependsOn": [
+                "LambdaRole1",
+                "LambdaLogGroup1"
+            ],
+            "Properties": {
+                "Description": "SQS triggered lambda2 for lambda_ppe_detection.",
+                "FunctionName": {
+                    "Fn::Sub": "lambda-2${tagId}"
+                },
+                "Handler": "lambda_ppe_detection.lambda_handler",
+                "Runtime": "python3.7",
+                "MemorySize": 128,
+                "Timeout": 30,
+                "TracingConfig": {
+                    "Mode": "Active"
+                },
+                "Role": {
+                    "Fn::GetAtt": [
+                        "LambdaRole2",
+                        "Arn"
+                    ]
+                },
+                "Code": {
+                    "S3Bucket": {
+                        "Fn::Sub": "s3${tagId}"
+                    },
+                    "S3Key": "lambda_ppe_detection.zip"
                 }
             }
         },
