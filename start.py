@@ -98,6 +98,17 @@ def uploadLambdas(s3bucketName):
 
 def deployCloudformationStack(tagId, snsTopicArn):
     print("Cloudfomation Stack deploying...")
+    
+    roleName = "LabRole"
+    iamClient = boto3.client('iam')
+    iamResponse = iamClient.get_role(RoleName=roleName)
+    roleArn = iamResponse["Role"]["Arn"]
+    
+    print("Cloudfomation Stack using Role ARN: " + roleArn)
+    
+    
+    
+    
     client = boto3.client('cloudformation')
     
     stackName = ("stack" + tagId)
@@ -120,7 +131,7 @@ def deployCloudformationStack(tagId, snsTopicArn):
         }
         ],
         Capabilities=['CAPABILITY_IAM'],
-        RoleARN='arn:aws:iam::799129573284:role/LabRole',
+        RoleARN=roleArn,
     )
     time.sleep(5)
     
