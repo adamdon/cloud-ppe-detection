@@ -16,8 +16,34 @@ def lambda_handler(event, context):
     print("imageName: " + imageName)
     print("tableName: " + tableName)
     
-    # rekognitionClient = boto3.client('rekognition')
-    # response = rekognitionClient.detect_labels(Image={'S3Object':{'Bucket':bucketName,'Name':imageName}}, MaxLabels=5)
+    rekognitionClient = boto3.client('rekognition')
+    response = rekognitionClient.detect_protective_equipment(
+        Image={'S3Object': {'Bucket': bucketName,'Name': imageName,}},
+        SummarizationAttributes={'MinConfidence': float("75"),'RequiredEquipmentTypes': ['FACE_COVER', 'HAND_COVER']}
+    )
+    
+    compliance = ""
+    
+    print(response)
+    bodyParts = response["Persons"][0]["BodyParts"]
+    print(bodyParts)
+    for part in bodyParts:
+        partName = part["Name"]
+        EquipmentDetectionsList = part["EquipmentDetections"]
+        
+        if len(EquipmentDetectionsList) > 0:
+            # if partName == "FACE"
+            print("EquipmentDetections FOUND for " + partName)
+            # compliance = (compliance + "" )
+        else:
+            print("EquipmentDetections NOT found for " + partName)
+        
+            
+
+            
+    
+    
+    
     # labels = response["Labels"]
     
     # for label in labels:

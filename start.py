@@ -166,8 +166,8 @@ def deployCloudformationStack(tagId, snsTopicArn, iamName):
             
             newStackDescriptionResponse = client.describe_stacks(StackName=stackName)
             currentStatus = newStackDescriptionResponse["Stacks"][0]["StackStatus"]
-            if currentStatus == "CREATE_FAILED":
-                raise Exception('Cloudfomation Stack ERROR - CREATE_FAILED')
+            if currentStatus == "ROLLBACK_COMPLETE":
+                raise Exception('Cloudfomation Stack ERROR - ROLLBACK_COMPLETE')
             
         print("Cloudfomation Stack deploying complete, status: " + currentStatus)    
     else:
