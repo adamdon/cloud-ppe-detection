@@ -12,22 +12,24 @@ def lambda_handler(event, context):
     imageName = message["Records"][0]["s3"]["object"]["key"]
     tableName = ("table" + bucketName[2:])
     
-    print(bucketName)
-    print(imageName)
-    print(tableName)
+    print("bucketName: " + bucketName)
+    print("imageName: " + imageName)
+    print("tableName: " + tableName)
     
     rekognitionClient = boto3.client('rekognition')
     response = rekognitionClient.detect_labels(Image={'S3Object':{'Bucket':bucketName,'Name':imageName}}, MaxLabels=5)
     labels = response["Labels"]
     
     for label in labels:
-        print(type(label))
-        print(label)
-        # del label["Instances"]
-        # del label["Parents"]
+        del label["Instances"]
+        del label["Parents"]
+        label["Confidence"] = str(label["Confidence"])
+        print("label found: " + str(label))
+        
+    # print(labels)    
     
-    # table = boto3.resource("dynamodb").Table(tableName)
-    # table.put_item(Item={"image": imageName, "results": "testResults"})
+    table = boto3.resource("dynamodb").Table(tableName)
+    table.put_item(Item={"image": imageName, "results": str(labels)})
     
     print("... End of lambda_label_detection.py")
 

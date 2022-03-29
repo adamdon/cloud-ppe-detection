@@ -230,8 +230,8 @@ def createSNS(tagId, s3Name):
     newTopic = "null"
     
     
-    newTopic = sns.Topic(topic["TopicArn"])
-    newTopic.subscribe(Protocol="email", Endpoint="mail@adamdon.co.uk", ReturnSubscriptionArn=False)
+    # newTopic = sns.Topic(topic["TopicArn"])
+    # newTopic.subscribe(Protocol="email", Endpoint="mail@adamdon.co.uk", ReturnSubscriptionArn=False)
     
     # for currentTopic in topicsList:
     #     currentTopic.subscribe(Protocol="email", Endpoint="mail@adamdon.co.uk", ReturnSubscriptionArn=False)
