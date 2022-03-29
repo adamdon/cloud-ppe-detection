@@ -1,3 +1,5 @@
+import traceback
+import time
 import json
 import boto3
 
@@ -22,40 +24,40 @@ def lambda_handler(event, context):
         SummarizationAttributes={'MinConfidence': float("75"),'RequiredEquipmentTypes': ['FACE_COVER', 'HAND_COVER']}
     )
     
-    compliance = ""
     
-    print(response)
+    compliance = ""
+    compliant = True
+    
+    
     bodyParts = response["Persons"][0]["BodyParts"]
-    print(bodyParts)
+    
     for part in bodyParts:
-        partName = part["Name"]
-        EquipmentDetectionsList = part["EquipmentDetections"]
+        partName = part["Name"].lower().replace("_", " ")
+        equipmentDetectionsList = part["EquipmentDetections"]
+        if partName != "head":
+            if len(equipmentDetectionsList) > 0:
+                compliance = (compliance + "" + partName + " is pretected, ")
+            else:
+                compliant = False
+                compliance = (compliance + "" + partName + " is exposed, ") 
+    if compliant == True:
+        compliance = "PASSED: " + compliance
+    else:
+        compliance = "FAILED: " + compliance
         
-        if len(EquipmentDetectionsList) > 0:
-            # if partName == "FACE"
-            print("EquipmentDetections FOUND for " + partName)
-            # compliance = (compliance + "" )
-        else:
-            print("EquipmentDetections NOT found for " + partName)
-        
-            
+    # print(bodyParts)    
+    print(compliance)
+    
+    time.sleep(3)
+    table = boto3.resource("dynamodb").Table(tableName)
+    try:
+        existingItem = table.get_item(Key={'image': imageName})
+        table.update_item(Key={'image': imageName},UpdateExpression="SET compliance = :updated", ExpressionAttributeValues={':updated': compliance})
+    except:
+        table.put_item(Item={"image": imageName, "results": "Not yet set", "compliance": str(compliance)})
+        print(traceback.format_exc())
 
             
-    
-    
-    
-    # labels = response["Labels"]
-    
-    # for label in labels:
-    #     del label["Instances"]
-    #     del label["Parents"]
-    #     label["Confidence"] = str(label["Confidence"])
-    #     print("label found: " + str(label))
-        
-    # # print(labels)    
-    
-    # table = boto3.resource("dynamodb").Table(tableName)
-    # table.put_item(Item={"image": imageName, "results": str(labels)})
     
     print("... End of lambda_ppe_detection.py")
 

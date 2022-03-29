@@ -505,20 +505,12 @@
                     {
                         "AttributeName": "image",
                         "AttributeType": "S"
-                    },
-                    {
-                        "AttributeName": "results",
-                        "AttributeType": "S"
                     }
                 ],
                 "KeySchema": [
                     {
                         "AttributeName": "image",
                         "KeyType": "HASH"
-                    },
-                    {
-                        "AttributeName": "results",
-                        "KeyType": "RANGE"
                     }
                 ],
                 "ProvisionedThroughput": {

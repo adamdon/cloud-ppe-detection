@@ -1,3 +1,4 @@
+import traceback
 import json
 import boto3
 
@@ -28,7 +29,13 @@ def lambda_handler(event, context):
         
 
     table = boto3.resource("dynamodb").Table(tableName)
-    table.put_item(Item={"image": imageName, "results": str(labels)})
+    try:
+        existingItem = table.get_item(Key={'image': imageName})
+        table.update_item(Key={'image': imageName},UpdateExpression="SET results = :updated", ExpressionAttributeValues={':updated': str(labels)})
+    except:
+        table.put_item(Item={"image": imageName, "results": str(labels), "compliance": "Not yet set"})
+        print(traceback.format_exc())
+
     
     print("... End of lambda_label_detection.py")
 
