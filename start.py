@@ -1,3 +1,4 @@
+import sys
 import os
 import traceback
 import time
@@ -17,6 +18,15 @@ def main():
     print("cloud-ppe-detection start up... (╯°□°)╯︵ ┻━┻")
     print("")
     
+    if len(sys.argv) > 1: # Checking if command-line arguments passed
+        tagSuffix = sys.argv[1]
+        iamName = sys.argv[2]
+        keyName = sys.argv[3]
+    else:  # if no arguments passed, default settings will be used
+        tagSuffix = "s1025475"
+        iamName = "LabRole"
+        keyName = "vockey"
+    
     tagId = None
     securityGroupId = None
     s3Name = None
@@ -27,15 +37,15 @@ def main():
     ec2instanceId = None
     
     try:
-        tagId = createTagId()
+        tagId = createTagId(tagSuffix)
         securityGroupId = createSecurityGroup(tagId)
         s3Name = createS3(tagId)
         snsTopicArn = createSNS(tagId, s3Name)
         s3EventRequestId = createS3Event(tagId, s3Name, snsTopicArn)
         uploadLambdas(s3Name)
-        StackId = deployCloudformationStack(tagId, snsTopicArn)
+        StackId = deployCloudformationStack(tagId, snsTopicArn, iamName)
         ec2StartUpBashScript = creatEc2StartUpBashScript(tagId, s3Name)
-        ec2instanceId = createEc2(tagId, securityGroupId, ec2StartUpBashScript)
+        ec2instanceId = createEc2(tagId, securityGroupId, ec2StartUpBashScript, keyName)
     except:
         print("*** An exception occurred ***")
         print(traceback.format_exc())
@@ -96,10 +106,10 @@ def uploadLambdas(s3bucketName):
 
 
 
-def deployCloudformationStack(tagId, snsTopicArn):
+def deployCloudformationStack(tagId, snsTopicArn, iamName):
     print("Cloudfomation Stack deploying...")
     
-    roleName = "LabRole"
+    roleName = iamName
     iamClient = boto3.client('iam')
     iamResponse = iamClient.get_role(RoleName=roleName)
     roleArn = iamResponse["Role"]["Arn"]
@@ -161,10 +171,10 @@ def deployCloudformationStack(tagId, snsTopicArn):
 
 
 
-def createTagId():
+def createTagId(tagSuffix):
     timecurrent = int(time.time())
     timeStr = str(timecurrent)
-    tagId = ("-" + timeStr + "-" + "s1025475")
+    tagId = ("-" + timeStr + "-" + tagSuffix)
     print("Resources being created with tagId: " + tagId)
     print("")
     return tagId
@@ -308,7 +318,7 @@ def createS3Event(tagId, s3Name, snsTopicArn):
 
 
 
-def createEc2(tagId, securityGroupId, ec2StartUpBashScript):
+def createEc2(tagId, securityGroupId, ec2StartUpBashScript, keyName):
     print("EC2 instance creating...")
     ec2Client = boto3.client('ec2')
     response = ec2Client.run_instances(
@@ -317,7 +327,7 @@ def createEc2(tagId, securityGroupId, ec2StartUpBashScript):
             MaxCount=1,
             MinCount=1,
             SecurityGroupIds=[securityGroupId],
-            KeyName= 'vockey',
+            KeyName=keyName,
             UserData=ec2StartUpBashScript,
             IamInstanceProfile={
                         'Name': 'EMR_EC2_DefaultRole'
