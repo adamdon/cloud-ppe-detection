@@ -122,7 +122,28 @@ def deployCloudformationStack(tagId, snsTopicArn):
         Capabilities=['CAPABILITY_IAM'],
         RoleARN='arn:aws:iam::799129573284:role/LabRole',
     )
-    time.sleep(60) #Sleep due to AWS propagation issues
+    time.sleep(5)
+    
+    stackDescriptionResponse = client.describe_stacks(StackName=stackName)
+    foundStackName = stackDescriptionResponse["Stacks"][0]["StackName"]
+    
+    if foundStackName == stackName:
+        currentStatus = stackDescriptionResponse["Stacks"][0]["StackStatus"]
+        
+        while currentStatus != "CREATE_COMPLETE":
+            print("Cloudfomation Stack deploying, status: " + currentStatus + "...")
+            time.sleep(15)
+            
+            newStackDescriptionResponse = client.describe_stacks(StackName=stackName)
+            currentStatus = newStackDescriptionResponse["Stacks"][0]["StackStatus"]
+            if currentStatus == "CREATE_FAILED":
+                raise Exception('Cloudfomation Stack ERROR - CREATE_FAILED')
+            
+        print("Cloudfomation Stack deploying complete, status: " + currentStatus)    
+    else:
+        raise Exception('Cloudfomation Stack ERROR - not found')
+        
+
     print("Cloudfomation Stack deployed with StackId: " + response["StackId"])
     return response["StackId"]
 
