@@ -9,6 +9,10 @@
             "Type": "String",
             "Default": "tagId"
         },
+        "alertNumber": {
+            "Type": "String",
+            "Default": "alertNumber"
+        },
         "TopicRegion": {
             "Type": "String",
             "Default": "us-east-1"
@@ -276,6 +280,13 @@
                             "Action": [
                                 "sts:AssumeRole"
                             ]
+                        },
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "sns.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
                         }
                     ]
                 },
@@ -358,6 +369,20 @@
                                         "rekognition:DetectProtectiveEquipment",
                                         "rekognition:DetectLabels",
                                         "rekognition:GetLabelDetection"
+                                    ],
+                                    "Resource": "*"
+                                },
+                                {
+                                    "Effect": "Allow",
+                                    "Action": [
+                                        "sns:SetSMSAttributes",
+                                        "sns:Publish",
+                                        "lambda:GetFunctionConfiguration",
+                                        "logs:CreateLogGroup",
+                                        "logs:CreateLogStream",
+                                        "logs:PutLogEvents",
+                                        "logs:PutMetricFilter",
+                                        "logs:PutRetentionPolicy"
                                     ],
                                     "Resource": "*"
                                 }
@@ -466,8 +491,8 @@
         "Lambda2": {
             "Type": "AWS::Lambda::Function",
             "DependsOn": [
-                "LambdaRole1",
-                "LambdaLogGroup1"
+                "LambdaRole2",
+                "LambdaLogGroup2"
             ],
             "Properties": {
                 "Description": "SQS triggered lambda2 for lambda_ppe_detection.",
@@ -492,6 +517,13 @@
                         "Fn::Sub": "s3${tagId}"
                     },
                     "S3Key": "lambda_ppe_detection.zip"
+                },
+                "Environment": {
+                    "Variables": {
+                        "alertNumber": {
+                            "Ref": "alertNumber"
+                        }
+                    }
                 }
             }
         },

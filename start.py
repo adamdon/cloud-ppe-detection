@@ -18,14 +18,21 @@ def main():
     print("cloud-ppe-detection start up... (╯°□°)╯︵ ┻━┻")
     print("")
     
-    if len(sys.argv) > 1: # Checking if command-line arguments passed
+    if len(sys.argv) == 5: # Checking if command-line arguments passed
         tagSuffix = sys.argv[1]
         iamName = sys.argv[2]
         keyName = sys.argv[3]
+        alertNumber = sys.argv[4]
+    elif len(sys.argv) == 4:
+        tagSuffix = sys.argv[1]
+        iamName = sys.argv[2]
+        keyName = sys.argv[3]
+        alertNumber = "ZZ-ZZZZZZZZZZ"
     else:  # if no arguments passed, default settings will be used
         tagSuffix = "s1025475"
         iamName = "LabRole"
         keyName = "vockey"
+        alertNumber = "ZZ-ZZZZZZZZZZ"
     
     tagId = None
     securityGroupId = None
@@ -43,7 +50,7 @@ def main():
         snsTopicArn = createSNS(tagId, s3Name)
         s3EventRequestId = createS3Event(tagId, s3Name, snsTopicArn)
         uploadLambdas(s3Name)
-        StackId = deployCloudformationStack(tagId, snsTopicArn, iamName)
+        StackId = deployCloudformationStack(tagId, snsTopicArn, iamName, alertNumber)
         ec2StartUpBashScript = creatEc2StartUpBashScript(tagId, s3Name)
         ec2instanceId = createEc2(tagId, securityGroupId, ec2StartUpBashScript, keyName)
     except:
@@ -115,7 +122,7 @@ def uploadLambdas(s3bucketName):
 
 
 
-def deployCloudformationStack(tagId, snsTopicArn, iamName):
+def deployCloudformationStack(tagId, snsTopicArn, iamName, alertNumber):
     print("Cloudfomation Stack deploying...")
     
     roleName = iamName
@@ -147,6 +154,10 @@ def deployCloudformationStack(tagId, snsTopicArn, iamName):
         {
             'ParameterKey': 'tagId',
             'ParameterValue': tagId
+        },
+        {
+            'ParameterKey': 'alertNumber',
+            'ParameterValue': alertNumber
         }
         ],
         Capabilities=['CAPABILITY_IAM'],

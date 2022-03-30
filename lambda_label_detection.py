@@ -34,7 +34,7 @@ def lambda_handler(event, context):
         table.update_item(Key={'image': imageName},UpdateExpression="SET results = :updated", ExpressionAttributeValues={':updated': str(labels)})
     except:
         table.put_item(Item={"image": imageName, "results": str(labels), "compliance": "Not yet set"})
-        print(traceback.format_exc())
+        # print(traceback.format_exc())
 
     
     print("... End of lambda_label_detection.py")
