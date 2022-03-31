@@ -25,6 +25,11 @@
                 "QueueName": {
                     "Fn::Sub": "sqs-1${tagId}"
                 }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "912bb7dc-ab04-4bf2-89f0-4f584e8d8799"
+                }
             }
         },
         "Queue2": {
@@ -32,6 +37,11 @@
             "Properties": {
                 "QueueName": {
                     "Fn::Sub": "sqs-2${tagId}"
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "15424f4e-eaf8-4eee-8fb9-31f69e5916a2"
                 }
             }
         },
@@ -72,6 +82,11 @@
                         "Ref": "Queue1"
                     }
                 ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "07cb7465-3d76-48ed-a579-4808d3ec7fc2"
+                }
             }
         },
         "SqsQueuePolicy2": {
@@ -111,6 +126,11 @@
                         "Ref": "Queue2"
                     }
                 ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "885aa22a-e363-4544-9d3a-b30c9536ef11"
+                }
             }
         },
         "SnsSubscription1": {
@@ -129,6 +149,11 @@
                 "TopicArn": {
                     "Ref": "snsTopicArn"
                 }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "7f7f8001-8d68-4bde-83f3-fac186a68bdf"
+                }
             }
         },
         "SnsSubscription2": {
@@ -146,6 +171,11 @@
                 },
                 "TopicArn": {
                     "Ref": "snsTopicArn"
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "994e69db-4965-4559-b3eb-490c44fc0535"
                 }
             }
         },
@@ -258,6 +288,11 @@
                         }
                     }
                 ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "eea51d53-0b9a-4551-b0fc-78c60d44ffcf"
+                }
             }
         },
         "LambdaRole2": {
@@ -390,6 +425,11 @@
                         }
                     }
                 ]
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "13f2990c-7a6f-49c2-bb8a-f6a5b1beac10"
+                }
             }
         },
         "LambdaSourceMapping1": {
@@ -412,6 +452,11 @@
                         "Lambda1",
                         "Arn"
                     ]
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "84c549f7-92c8-4139-888b-1eb9373bc858"
                 }
             }
         },
@@ -436,6 +481,11 @@
                         "Arn"
                     ]
                 }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "afd2f79e-d6a8-46f2-ba26-6f6f30de7589"
+                }
             }
         },
         "LambdaLogGroup1": {
@@ -445,6 +495,11 @@
                     "Fn::Sub": "/aws/lambda/lambda-1${tagId}"
                 },
                 "RetentionInDays": 365
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "33845911-59d9-4398-85d9-feba54c9bb05"
+                }
             }
         },
         "LambdaLogGroup2": {
@@ -454,6 +509,11 @@
                     "Fn::Sub": "/aws/lambda/lambda-2${tagId}"
                 },
                 "RetentionInDays": 365
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "8a8d3dcc-f1d9-464b-9721-2a7c674aeb93"
+                }
             }
         },
         "Lambda1": {
@@ -485,6 +545,11 @@
                         "Fn::Sub": "s3${tagId}"
                     },
                     "S3Key": "lambda_label_detection.zip"
+                }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "6221deaa-5b1a-4cb6-a4e6-c3b7c1e115f0"
                 }
             }
         },
@@ -525,6 +590,11 @@
                         }
                     }
                 }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "8c360ee5-2904-49b1-9ded-20c84ee3a1ed"
+                }
             }
         },
         "DynamoDbImageTable": {
@@ -549,6 +619,201 @@
                     "ReadCapacityUnits": 5,
                     "WriteCapacityUnits": 5
                 }
+            },
+            "Metadata": {
+                "AWS::CloudFormation::Designer": {
+                    "id": "9b68a277-3802-4718-aa63-3eef7505aa1c"
+                }
+            }
+        }
+    },
+    "Metadata": {
+        "AWS::CloudFormation::Designer": {
+            "9b68a277-3802-4718-aa63-3eef7505aa1c": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 170,
+                    "y": 400
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "8a8d3dcc-f1d9-464b-9721-2a7c674aeb93": {
+                "size": {
+                    "width": 150,
+                    "height": 150
+                },
+                "position": {
+                    "x": 300,
+                    "y": 550
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "33845911-59d9-4398-85d9-feba54c9bb05": {
+                "size": {
+                    "width": 150,
+                    "height": 150
+                },
+                "position": {
+                    "x": 300,
+                    "y": 190
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "15424f4e-eaf8-4eee-8fb9-31f69e5916a2": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 30,
+                    "y": 590
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "13f2990c-7a6f-49c2-bb8a-f6a5b1beac10": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 170,
+                    "y": 590
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "8c360ee5-2904-49b1-9ded-20c84ee3a1ed": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 170,
+                    "y": 740
+                },
+                "z": 1,
+                "embeds": [],
+                "dependson": [
+                    "8a8d3dcc-f1d9-464b-9721-2a7c674aeb93"
+                ]
+            },
+            "afd2f79e-d6a8-46f2-ba26-6f6f30de7589": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 30,
+                    "y": 740
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "994e69db-4965-4559-b3eb-490c44fc0535": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": -110,
+                    "y": 590
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "885aa22a-e363-4544-9d3a-b30c9536ef11": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 30,
+                    "y": 460
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "912bb7dc-ab04-4bf2-89f0-4f584e8d8799": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 30,
+                    "y": 230
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "eea51d53-0b9a-4551-b0fc-78c60d44ffcf": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 170,
+                    "y": 230
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "6221deaa-5b1a-4cb6-a4e6-c3b7c1e115f0": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 170,
+                    "y": 90
+                },
+                "z": 1,
+                "embeds": [],
+                "dependson": [
+                    "33845911-59d9-4398-85d9-feba54c9bb05"
+                ]
+            },
+            "84c549f7-92c8-4139-888b-1eb9373bc858": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 30,
+                    "y": 90
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "7f7f8001-8d68-4bde-83f3-fac186a68bdf": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": -110,
+                    "y": 230
+                },
+                "z": 1,
+                "embeds": []
+            },
+            "07cb7465-3d76-48ed-a579-4808d3ec7fc2": {
+                "size": {
+                    "width": 60,
+                    "height": 60
+                },
+                "position": {
+                    "x": 30,
+                    "y": 340
+                },
+                "z": 1,
+                "embeds": []
             }
         }
     }

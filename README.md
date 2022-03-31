@@ -1,2 +1,65 @@
 # cloud-ppe-detection
-# start
+
+A cloud application that deploys a fully automated AWS system, this system scans images using pre-trained models to provide both Personal Protective Equipment (PPE) and item Label detection. The results report on Labels found as well as if any detected persons are wearing full PPE correctly on both hands and face.  
+
+## Installation
+
+With Python and [boto3](https://github.com/boto/boto3) installed, the application can be run from anywhere with the access to your aws credentials. The simplest way to do this if from the [Cloud9](https://aws.amazon.com/cloud9/) IDE.  
+
+```bash
+pip install boto3
+git clone https://github.com/adamdon/cloud-ppe-detection.git
+cd cloud-ppe-detection
+```
+
+## Environment
+
+The only AWS setup required is to have a IAM Role with permissions for CreateRole and AttachRolePolicy. A valid RSA key pair must also be in place for use with the EC2
+
+If the permissions aren't in place you can add the IAM policy bellow to any Role.    
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "iam:AttachRolePolicy",
+        "iam:CreateRole"
+      ],
+      "Effect": "Allow",
+      "Resource": "*"
+    }
+  ]
+}
+```
+
+## Usage
+
+There are three parameters configurations options for running the application.
+
+**Default values**
+(suitable for AWS Academy Learner Lab)
+```bash
+python3 start.py
+```
+
+**Custom values** ("tagSuffix" is the unique name to add to all resources)
+```bash 
+python3 start.py [tagSuffix] [iamName] [KeyName]
+```
+**Custom values (optional)** ("alertNumber" is a mobile number for PPE violation alerts)
+```bash 
+python3 start.py [tagSuffix] [iamName] [KeyName] [alertNumber]
+```
+
+*examples* 
+```bash 
+python3 start.py
+python3 start.py s1025475 LabRole vockey
+python3 start.py s1025475 LabRole vockey +447700900000
+```
+
+
+## License
+[MIT](https://choosealicense.com/licenses/mit/)
