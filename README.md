@@ -2,6 +2,14 @@
 
 A cloud application that deploys a fully automated AWS system, this system scans images using pre-trained models to provide both Personal Protective Equipment (PPE) and item Label detection. The results report on Labels found as well as if any detected persons are wearing full PPE correctly on both hands and face.  
 
+## System Architecture
+
+![Systems Architecture](https://raw.githubusercontent.com/adamdon/cloud-ppe-detection/main/systems_architecture.png)
+
+## CloudFormation Design
+
+![CloudFormation Design](https://raw.githubusercontent.com/adamdon/cloud-ppe-detection/main/cloudformation_design.png)
+
 ## Installation
 
 With Python and [boto3](https://github.com/boto/boto3) installed, the application can be run from anywhere with the access to your aws credentials. The simplest way to do this if from the [Cloud9](https://aws.amazon.com/cloud9/) IDE.  
@@ -36,7 +44,7 @@ If the permissions aren't in place you can add the IAM policy bellow to any Role
 
 ## Usage
 
-There are three parameters configurations options for running the application.
+There are three parameters configuration options for running the application.
 
 **Default values**
 (suitable for AWS Academy Learner Lab)
@@ -60,6 +68,7 @@ python3 start.py s1025475 LabRole vockey
 python3 start.py s1025475 LabRole vockey +447700900000
 ```
 
+The output is viewable from the DynamoDB Table resource. 
 
 ## License
 [MIT](https://choosealicense.com/licenses/mit/)
