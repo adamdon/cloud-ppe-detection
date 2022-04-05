@@ -10,20 +10,21 @@ from botocore.exceptions import ClientError
 
 
 
-# 
-# Script start here
-# 
+
+# # # main function
+# start of script to create resources
 def main():
     print("")
     print("cloud-ppe-detection start up... (╯°□°)╯︵ ┻━┻")
     print("")
     
-    if len(sys.argv) == 5: # Checking if command-line arguments passed
-        tagSuffix = sys.argv[1]
-        iamName = sys.argv[2]
-        keyName = sys.argv[3]
-        alertNumber = sys.argv[4]
-    elif len(sys.argv) == 4:
+    # Checking if command-line arguments passed
+    if len(sys.argv) == 5: # optional SMS alert feature is in use if 4 additional arguments used
+        tagSuffix = sys.argv[1] # this will show at the end of the name for all resources created
+        iamName = sys.argv[2] # iamName is name of the Role used to deploy the cloudformation 
+        keyName = sys.argv[3] # name of RSA key pair to be used with EC2 instance 
+        alertNumber = sys.argv[4] # the cell phone number in international format that SMS alerts will be sent to
+    elif len(sys.argv) == 4: # if 3 additional arguments used the SMS alert fecture will not be used
         tagSuffix = sys.argv[1]
         iamName = sys.argv[2]
         keyName = sys.argv[3]
@@ -34,16 +35,16 @@ def main():
         keyName = "vockey"
         alertNumber = "ZZ-ZZZZZZZZZZ"
     
-    tagId = None
-    securityGroupId = None
-    s3Name = None
-    snsTopicArn = None
-    s3EventRequestId = None
-    ec2StartUpBashScript = None
-    StackId = None
-    ec2instanceId = None
+    tagId = None # the full name used to append the name for all resources created including unix timestamp
+    securityGroupId = None # the id of the created Security Group that will be used with the EC2
+    s3Name = None # the name of the created s3 bucket
+    snsTopicArn = None # the ARN of the created SNS topic 
+    s3EventRequestId = None # the id of the created event that has the s3 bucket trigger a SNS event
+    ec2StartUpBashScript = None # the full text of the crated bash script that will be ran on the EC2 once running
+    StackId = None # the of the created cloudformation stack
+    ec2instanceId = None # the instance id the of crated EC2 instance
     
-    try:
+    try: # main applicaion logic where all resporces are created sequentially
         tagId = createTagId(tagSuffix)
         securityGroupId = createSecurityGroup(tagId)
         s3Name = createS3(tagId)
@@ -53,12 +54,12 @@ def main():
         StackId = deployCloudformationStack(tagId, snsTopicArn, iamName, alertNumber)
         ec2StartUpBashScript = creatEc2StartUpBashScript(tagId, s3Name)
         ec2instanceId = createEc2(tagId, securityGroupId, ec2StartUpBashScript, keyName)
-    except:
+    except: # if any exceptions bubble up during resource creation, a clean up will start
         print("*** An exception occurred ***")
         print(traceback.format_exc())
         deleteResources(ec2instanceId, securityGroupId, s3Name, snsTopicArn, StackId);
         quit()
-    else:
+    else: # if resource creation is successful, a menu will be shown to the user
         print("")
         print("...Setup complete")
         ans=True
@@ -89,10 +90,16 @@ def main():
 
 
 # 
-# resource creation fuctions
+# # # # resource creation fuctions
 # 
 
 
+
+# # # uploadLambdas function
+# #
+# loads and zips both lambda files
+# PUTs the zip files on the named s3 bucket
+# then deletes the newly created zip files from local storage
 def uploadLambdas(s3bucketName):
     print("Lambdas uploading to S3...")
     os.chdir(Path(__file__).parent)
@@ -122,6 +129,15 @@ def uploadLambdas(s3bucketName):
 
 
 
+
+# # # deployCloudformationStack function
+# #
+# gets the Role ARN of the Role name
+# loads the cloudformation json file from local storage
+# creates the stack using the found Role ARN and loaded template json file
+# checks that the stack is created
+# polls the status of the stack untill it changes to CREATE_COMPLETE
+# if any problem with deployment with ROLLBACK_COMPLETE, an Exception is Raised to start clean up
 def deployCloudformationStack(tagId, snsTopicArn, iamName, alertNumber):
     print("Cloudfomation Stack deploying...")
     
@@ -191,6 +207,10 @@ def deployCloudformationStack(tagId, snsTopicArn, iamName, alertNumber):
 
 
 
+# # # createTagId function
+# #
+# get unix epoch time
+# concatenates time with user defind tag suffix
 def createTagId(tagSuffix):
     timecurrent = int(time.time())
     timeStr = str(timecurrent)
@@ -201,6 +221,11 @@ def createTagId(tagSuffix):
         
         
         
+        
+# # # createSecurityGroup function
+# #
+# creates a new security group for EC2 with default VPC
+# creates a ingress rule that allows port 22 (SSH) to be used        
 def createSecurityGroup(tagId):
     print("Security group creating...")
     ec2Client = boto3.client('ec2')
@@ -227,6 +252,16 @@ def createSecurityGroup(tagId):
         print(e)
    
 
+
+
+# # # creatEc2StartUpBashScript function
+# #
+# creates bash script that will run on EC2 start up
+# concatenates a bash script as a String with the s3 bucket pass as a argument
+# script navigates to default users home directory
+# script installs git and boto3
+# script clones repository containing images and upload script
+# script runs python load up file
 def creatEc2StartUpBashScript(tagId, s3Name):
     script = ("#!/bin/bash\n"
                     "cd /home/ec2-user\n" 
@@ -243,18 +278,28 @@ def creatEc2StartUpBashScript(tagId, s3Name):
 
 
         
+# # # createS3 function
+# #
+# creates s3 bucket using tag provided
+# returns id of bucket
 def createS3(tagId):
     print("S3 bucket creating...")
+    
     s3Client = boto3.resource('s3')
     bucketName = ('s3' + tagId)
     s3Client.create_bucket(Bucket= bucketName)
 
-    # ec2Client.create_tags(Resources=[instance], Tags=[{'Key':'Name', 'Value':("ec2" + tagId)}])
     print("S3 bucket created with name: " + bucketName)
     return bucketName
 
 
 
+
+# # # createSNS function
+# #
+# creates SNS Topic using tag given
+# creates Policy that only allows this topic to be published to by the S3 bucket
+# attaches the Policy onto the SNS Topic
 def createSNS(tagId, s3Name):
     print("SNS topic creating...")
     snsClient = boto3.client("sns")
@@ -293,17 +338,26 @@ def createSNS(tagId, s3Name):
     
     
     # newTopic = sns.Topic(topic["TopicArn"])
-    # newTopic.subscribe(Protocol="email", Endpoint="mail@adamdon.co.uk", ReturnSubscriptionArn=False)
+    # newTopic.subscribe(Protocol="email", Endpoint="mail@email.co.uk", ReturnSubscriptionArn=False)
     
     # for currentTopic in topicsList:
-    #     currentTopic.subscribe(Protocol="email", Endpoint="mail@adamdon.co.uk", ReturnSubscriptionArn=False)
+    #     currentTopic.subscribe(Protocol="email", Endpoint="mail@email.co.uk", ReturnSubscriptionArn=False)
     #     print(currentTopic)
     #     print(type(currentTopic))
         
     print("SNS topic created with arn: " + topic["TopicArn"])
     return topic["TopicArn"]
+
+ 
+ 
+ 
             
-            
+# # # createS3Event function
+# #
+# gets s3 bucket resource from name
+# creates a bucket notification
+# sets event to triger on Put
+# adds filter show only files names starting with "image" trigger then event
 def createS3Event(tagId, s3Name, snsTopicArn):
     print("S3 event creating...")
     s3 = boto3.resource('s3')
@@ -337,7 +391,11 @@ def createS3Event(tagId, s3Name, snsTopicArn):
 
 
 
-
+# # # createEc2  function
+# #
+# creates a EC2 instance using user defined KeyName
+# creates a tag onto EC2 with name lable
+# passes created bash script into instance to be ran on start-up
 def createEc2(tagId, securityGroupId, ec2StartUpBashScript, keyName):
     print("EC2 instance creating...")
     ec2Client = boto3.client('ec2')
@@ -384,6 +442,11 @@ def createEc2(tagId, securityGroupId, ec2StartUpBashScript, keyName):
 # clean up fuctions
 # 
 
+# # # deleteResources  function
+# #
+# Root clean up function deletes all created resource
+# checks that resource IDs are not null are stage which this could be called is unknown
+# deletes each resource sequentially
 def deleteResources(ec2instanceId, securityGroupId, s3Name, snsTopicArn, StackId):
     if ec2instanceId:
         ec2Terminate(ec2instanceId, securityGroupId)
@@ -400,6 +463,9 @@ def deleteResources(ec2instanceId, securityGroupId, s3Name, snsTopicArn, StackId
 
 
 
+# # # deleteSecurtyGroup  function
+# #
+# deletes the create securty group
 def deleteSecurtyGroup(securityGroupId):
     print("deleteSecurtyGroup: " + securityGroupId)
     ec2Client = boto3.client('ec2')
@@ -411,6 +477,10 @@ def deleteSecurtyGroup(securityGroupId):
         
         
 
+# # # ec2Terminate  function
+# #
+# decatches the security group
+# terminates the EC2 instance
 def ec2Terminate(instanceId, securityGroupId):
     print("terminating ec2 instance: " + instanceId)
     ec2Client = boto3.client('ec2')
@@ -424,7 +494,12 @@ def ec2Terminate(instanceId, securityGroupId):
         
     response = ec2Client.terminate_instances(InstanceIds=[instanceId, ],)
     print("terminat ec2 instance complete ")
-        
+       
+       
+# # # s3EemptyDelete  function
+# #
+# deletes all objects within bucket
+# deletes bucket        
 def s3EemptyDelete(s3Name):
     print("s3EemptyDelete: " + s3Name)
     s3Client = boto3.resource('s3')
@@ -433,7 +508,10 @@ def s3EemptyDelete(s3Name):
     bucket.delete()
     print("s3EemptyDelete complete")
 
-        
+
+# # # snsTopicDelete  function
+# #
+# deletes SNS topic
 def snsTopicDelete(topicArn):
     print("snsTopicDelete: " + topicArn)
     snsClient = boto3.client("sns")
@@ -445,7 +523,10 @@ def snsTopicDelete(topicArn):
     else:
         print("snsTopicDelete complete")
         
-        
+
+# # # cloudformationStackDelete function
+# #
+# deletes whole cloudformation stack        
 def cloudformationStackDelete(StackId):
     print("cloudformationStackDelete: " + StackId)
     client = boto3.client('cloudformation')
