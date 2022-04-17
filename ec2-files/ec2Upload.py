@@ -12,7 +12,7 @@ def updloadFile(filename):
     print("Uploading file: " + filename)
     with open(filename, "rb") as f:
         s3Client.upload_fileobj(f, s3bucketName, filename)
-    time.sleep(3)
+    time.sleep(30)
 
 
 s3Client = boto3.client('s3')
